@@ -182,7 +182,7 @@ const Dashboard: React.FC = () => {
               <div>
                 <p className="text-white/70 text-sm">Total Spent</p>
                 <p className="text-2xl font-bold text-white">
-                  ${stats.totalSpent}
+                  ${stats.usedCredits}
                 </p>
               </div>
               <div className="glass p-3 rounded-full">

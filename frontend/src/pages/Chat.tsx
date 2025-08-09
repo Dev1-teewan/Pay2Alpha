@@ -4,11 +4,14 @@ import { Lock, Eye, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import ChatComposer from "../components/ChatComposer";
 import MessageList from "../components/MessageList";
-import { ethers, type InterfaceAbi } from "ethers";
+import { ethers, type InterfaceAbi, Signature } from "ethers";
 import SapphireChatAbi from "../abis/SapphireChatRecords.json";
 import { CONFIG } from "../config";
 import Pay2AlphaAbi from "../abis/Pay2Alpha.json";
 import { useWallet } from "../contexts/WalletContext";
+import * as sapphire from "@oasisprotocol/sapphire-paratime";
+import { buildSIWEMessage, signSIWEMessage } from "../utils/siwe";
+import { ensureChain } from "../utils/providers";
 
 interface Message {
   id: string;
@@ -182,25 +185,93 @@ const Chat: React.FC = () => {
     setMessages([...messages, newMessage]);
   };
 
-  const handleRevealMessage = (messageId: string, cost: number) => {
-    if (userCredits < cost) {
+  const handleRevealMessage = async (messageId: string, cost: number) => {
+    try {
+      if (!signer) throw new Error("Connect wallet");
+      if (userCredits < cost) {
+        alert(
+          "Insufficient credits! Please purchase more credits to reveal this message."
+        );
+        return;
+      }
+
+      // 1) Spend 1 credit on Base against any available record for this expert
+      await ensureChain(CONFIG.base.chainHex);
+      const payAbi: InterfaceAbi = Array.isArray(Pay2AlphaAbi as unknown)
+        ? (Pay2AlphaAbi as unknown as InterfaceAbi)
+        : (Pay2AlphaAbi as unknown as { abi: InterfaceAbi }).abi;
+      const pay = new ethers.Contract(CONFIG.base.pay2alpha, payAbi, signer);
+      const me = await signer.getAddress();
+      const expAddr = expertId
+        ? ethers.getAddress(expertId)
+        : ethers.ZeroAddress;
+      const totalRecs: bigint = await pay.recordCount();
+      let chosen: bigint | null = null;
+      for (let j = 0n; j < totalRecs; j++) {
+        const r = await pay.records(j);
+        if (
+          ethers.getAddress(r.expert) === expAddr &&
+          ethers.getAddress(r.client) === ethers.getAddress(me)
+        ) {
+          const avail = r.credits - r.creditsUsed;
+          if (avail > 0n) {
+            chosen = j;
+            break;
+          }
+        }
+      }
+      if (chosen === null) {
+        alert("No available credits found for this expert.");
+        return;
+      }
+      const spendTx = await pay.spendCredits(chosen, 1n);
+      await spendTx.wait();
+
+      // 2) Switch to Sapphire + SIWE + getSecretKey
+      await ensureChain(CONFIG.sapphire.chainHex);
+      const wrapped = sapphire.wrapEthersProvider((window as any).ethereum);
+      const sapphireProvider = new ethers.BrowserProvider(wrapped);
+      const sapphireSigner = await sapphireProvider.getSigner();
+      const addr = await sapphireSigner.getAddress();
+      const nonce = Math.random().toString(36).slice(2, 10);
+      const siwe = buildSIWEMessage(addr, nonce);
+      const sigHex = await signSIWEMessage(siwe, sapphireSigner);
+      const sig = Signature.from(sigHex);
+
+      const importedAbi = SapphireChatAbi as unknown;
+      const chatAbi: InterfaceAbi = Array.isArray(importedAbi)
+        ? (importedAbi as InterfaceAbi)
+        : (importedAbi as { abi: InterfaceAbi }).abi;
+      const chat = new ethers.Contract(
+        CONFIG.sapphire.chat,
+        chatAbi,
+        sapphireSigner
+      );
+      const token: string = await chat.login(siwe, {
+        v: sig.v,
+        r: sig.r,
+        s: sig.s,
+      });
+      // Confirm access by attempting to fetch secret; ignore the value for now
+      await chat.getSecretKey(BigInt(messageId), token);
+
+      // 3) Reveal in UI and persist
+      setMessages((prev) => {
+        const next = prev.map((m) =>
+          m.id === messageId ? { ...m, isRevealed: true } : m
+        );
+        const revealed = loadRevealed();
+        revealed.add(messageId);
+        saveRevealed(revealed);
+        return next;
+      });
+      setUserCredits((prev) => prev - cost);
+    } catch (e) {
+      console.error(e);
       alert(
-        "Insufficient credits! Please purchase more credits to reveal this message."
+        "Reveal failed. Ensure you have credits and are authorized as the client."
       );
-      return;
     }
-    // Deduct a credit locally and reveal
-    setMessages((prev) => {
-      const next = prev.map((m) =>
-        m.id === messageId ? { ...m, isRevealed: true } : m
-      );
-      // Persist revealed ids locally so they stay revealed after refresh/login
-      const revealed = loadRevealed();
-      revealed.add(messageId);
-      saveRevealed(revealed);
-      return next;
-    });
-    setUserCredits((prev) => prev - cost);
   };
 
   const encryptedMessages = messages.filter(

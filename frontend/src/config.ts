@@ -4,7 +4,7 @@ export const CONFIG = {
     chainHex: "0x14A34",
     rpcUrl: import.meta.env.VITE_BASE_RPC || "https://sepolia.base.org",
     usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-    pay2alpha: "0x0DB167C2AD954c8E5E454596989E969642784EBD",
+    pay2alpha: "0x3096A0B60eD807EE6C4323bD2460638652b8fC8F",
     startBlock: Number(import.meta.env.VITE_PAY2ALPHA_START_BLOCK || 0),
   },
   sapphire: {
