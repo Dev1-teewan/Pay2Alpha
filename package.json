@@ -4,7 +4,10 @@
   "description": "A Web3 platform where users can pay verified experts, traders, and educators micro-stablecoin payments for private, secure, real-time insights — powered by Ethereum L2s for cost-efficiency, Oasis Sapphire for confidentiality, and The Graph for transparent impact analytics.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:base": "hardhat run scripts/deploy.js --network baseSepolia",
+    "deploy:sapphire": "hardhat run scripts/deploy_sapphire.js --network sapphireTestnet"
   },
   "repository": {
     "type": "git",
@@ -20,6 +23,9 @@
   "homepage": "https://github.com/Dev1-teewan/Pay2Alpha#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@oasisprotocol/sapphire-contracts": "^0.2.14",
+    "@oasisprotocol/sapphire-hardhat": "^2.22.2",
+    "@oasisprotocol/sapphire-paratime": "^2.2.0",
     "hardhat": "^2.26.2"
   },
   "dependencies": {
