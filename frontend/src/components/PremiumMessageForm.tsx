@@ -65,8 +65,12 @@ const PremiumMessageForm: React.FC<PremiumMessageFormProps> = ({ onClose }) => {
       const eth = (window as unknown as { ethereum?: Eip1193Provider })
         .ethereum;
       if (!eth) throw new Error("No injected wallet (ethereum) found");
-      const wrapped = sapphire.wrapEthersProvider(eth as unknown as Eip1193Provider);
-      const provider = new ethers.BrowserProvider(wrapped as unknown as Eip1193Provider);
+      const wrapped = sapphire.wrapEthersProvider(
+        eth as unknown as Eip1193Provider
+      );
+      const provider = new ethers.BrowserProvider(
+        wrapped as unknown as Eip1193Provider
+      );
       const signer = await provider.getSigner();
       const importedAbi = SapphireChatAbi as unknown;
       let abi: ethers.InterfaceAbi;

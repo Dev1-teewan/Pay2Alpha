@@ -7,6 +7,8 @@ import MessageList from "../components/MessageList";
 import { ethers, type InterfaceAbi } from "ethers";
 import SapphireChatAbi from "../abis/SapphireChatRecords.json";
 import { CONFIG } from "../config";
+import Pay2AlphaAbi from "../abis/Pay2Alpha.json";
+import { useWallet } from "../contexts/WalletContext";
 
 interface Message {
   id: string;
@@ -20,20 +22,52 @@ interface Message {
 
 const Chat: React.FC = () => {
   const { expertId } = useParams();
+  const { signer } = useWallet();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [userCredits, setUserCredits] = useState(5);
+  const [userCredits, setUserCredits] = useState(0);
 
-  // Mock expert data
+  // Expert display state (fetched from Base Pay2Alpha)
+  const [expertName, setExpertName] = useState<string>("");
+  const [expertPrice, setExpertPrice] = useState<number>(50);
   const expert = {
     id: expertId,
-    name: "Sarah Chen",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    name:
+      expertName ||
+      (expertId
+        ? `${expertId.slice(0, 6)}...${expertId.slice(-4)}`
+        : "Unknown"),
+    avatar: `https://api.dicebear.com/9.x/identicon/svg?seed=${
+      expertId ?? "unknown"
+    }`,
     expertise: ["DeFi", "Smart Contracts", "Tokenomics"],
     status: "online",
-    pricePerMessage: 50,
+    pricePerMessage: expertPrice,
+  };
+
+  // Persist-reveal helpers (local-only, until on-chain reveal is wired)
+  const revealedKey = expertId
+    ? `revealed:${CONFIG.sapphire.chainId}:${CONFIG.sapphire.chat}:${expertId}`
+    : "";
+  const loadRevealed = (): Set<string> => {
+    try {
+      if (!revealedKey) return new Set();
+      const raw = localStorage.getItem(revealedKey);
+      if (!raw) return new Set();
+      const arr: string[] = JSON.parse(raw);
+      return new Set(arr);
+    } catch {
+      return new Set();
+    }
+  };
+  const saveRevealed = (s: Set<string>) => {
+    try {
+      if (!revealedKey) return;
+      localStorage.setItem(revealedKey, JSON.stringify(Array.from(s)));
+    } catch {
+      // ignore
+    }
   };
 
   useEffect(() => {
@@ -57,6 +91,7 @@ const Chat: React.FC = () => {
         const total: bigint = await c.recordCount();
         const items: Message[] = [];
         const expAddr = ethers.getAddress(expertId);
+        const revealed = loadRevealed();
         for (let i = 0n; i < total; i++) {
           const rec = await c.records(i);
           const recExpert: string = rec[0];
@@ -65,19 +100,67 @@ const Chat: React.FC = () => {
           const ts: bigint = rec[4];
           if (ethers.getAddress(recExpert) !== expAddr) continue;
           // Show all records for this artist, irrespective of client
+          const idStr = String(i);
           items.push({
-            id: String(i),
+            id: idStr,
             sender: "expert",
             content: ipfsCid, // We use CID as the plaintext message for now
             timestamp: new Date(Number(ts) * 1000),
             isEncrypted: true,
-            isRevealed: false,
-            cost: 50,
+            isRevealed: revealed.has(idStr),
           });
         }
         // Sort by time asc
         items.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
         setMessages(items);
+
+        // Fetch expert profile and user credits from Base network
+        try {
+          const baseProvider = new ethers.JsonRpcProvider(
+            CONFIG.base.rpcUrl,
+            undefined,
+            { staticNetwork: true }
+          );
+          const payImported = Pay2AlphaAbi as unknown;
+          const payAbi: InterfaceAbi = Array.isArray(payImported)
+            ? (payImported as InterfaceAbi)
+            : (payImported as { abi: InterfaceAbi }).abi;
+          const pay = new ethers.Contract(
+            CONFIG.base.pay2alpha,
+            payAbi,
+            baseProvider
+          );
+
+          const expAddr = ethers.getAddress(expertId);
+          const info = await pay.experts(expAddr);
+          if (info) {
+            if (info.name && info.name.length > 0) setExpertName(info.name);
+            if (info.pricePerCredit) {
+              setExpertPrice(Number(info.pricePerCredit) / 1_000_000);
+            }
+          }
+
+          // Compute user credits (sum of purchases for this expert - used)
+          let credits = 0;
+          if (signer) {
+            const me = await signer.getAddress();
+            const totalRecs: bigint = await pay.recordCount();
+            for (let j = 0n; j < totalRecs; j++) {
+              const r = await pay.records(j);
+              if (
+                ethers.getAddress(r.expert) === expAddr &&
+                ethers.getAddress(r.client) === ethers.getAddress(me)
+              ) {
+                const avail = Number(r.credits - r.creditsUsed);
+                credits += avail;
+              }
+            }
+          }
+          setUserCredits(credits);
+        } catch (err) {
+          // Non-fatal for chat rendering
+          console.warn("Failed to load expert profile/credits", err);
+        }
       } catch (e) {
         console.error("Failed to load records", e);
       } finally {
@@ -85,7 +168,7 @@ const Chat: React.FC = () => {
       }
     };
     load();
-  }, [expertId]);
+  }, [expertId, signer]);
 
   const handleSendMessage = (content: string) => {
     const newMessage: Message = {
@@ -106,12 +189,17 @@ const Chat: React.FC = () => {
       );
       return;
     }
-
-    setMessages(
-      messages.map((msg) =>
-        msg.id === messageId ? { ...msg, isRevealed: true } : msg
-      )
-    );
+    // Deduct a credit locally and reveal
+    setMessages((prev) => {
+      const next = prev.map((m) =>
+        m.id === messageId ? { ...m, isRevealed: true } : m
+      );
+      // Persist revealed ids locally so they stay revealed after refresh/login
+      const revealed = loadRevealed();
+      revealed.add(messageId);
+      saveRevealed(revealed);
+      return next;
+    });
     setUserCredits((prev) => prev - cost);
   };
 

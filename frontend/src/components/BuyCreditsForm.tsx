@@ -5,6 +5,7 @@ import ApproveUSDCButton from "./ApproveUSDCButton";
 import { useWallet } from "../contexts/WalletContext";
 import { CONFIG } from "../config";
 import Pay2AlphaAbi from "../abis/Pay2Alpha.json";
+import { ensureChain } from "../utils/providers";
 
 interface Expert {
   id: string;
@@ -28,6 +29,8 @@ const BuyCreditsForm: React.FC<BuyCreditsFormProps> = ({ expert, onClose }) => {
     if (!expert || !isApproved) return;
     try {
       if (!signer) throw new Error("Connect wallet");
+      // Ensure Base network before sending tx
+      await ensureChain(CONFIG.base.chainHex);
       const c = new ethers.Contract(
         CONFIG.base.pay2alpha,
         (Pay2AlphaAbi as any).abi || (Pay2AlphaAbi as any),

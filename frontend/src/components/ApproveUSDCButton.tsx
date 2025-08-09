@@ -3,6 +3,7 @@ import { CheckCircle, Clock } from "lucide-react";
 import { ethers } from "ethers";
 import { useWallet } from "../contexts/WalletContext";
 import { CONFIG } from "../config";
+import { ensureChain } from "../utils/providers";
 
 interface ApproveUSDCButtonProps {
   amount: number;
@@ -22,6 +23,8 @@ const ApproveUSDCButton: React.FC<ApproveUSDCButtonProps> = ({
 
     try {
       if (!signer) throw new Error("Connect wallet");
+      // Ensure Base network for USDC approval and Pay2Alpha spend
+      await ensureChain(CONFIG.base.chainHex);
       const erc20Abi = [
         "function approve(address spender,uint256 amount) returns (bool)",
       ];
