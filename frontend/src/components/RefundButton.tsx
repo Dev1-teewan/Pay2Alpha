@@ -1,27 +1,38 @@
-import React, { useState } from 'react'
-import { RotateCcw, Clock } from 'lucide-react'
+import React, { useState } from "react";
+import { RotateCcw, Clock } from "lucide-react";
+import { ethers } from "ethers";
+import { useWallet } from "../contexts/WalletContext";
+import { CONFIG } from "../config";
+import Pay2AlphaAbi from "../abis/Pay2Alpha.json";
 
 const RefundButton: React.FC = () => {
-  const [isRefunding, setIsRefunding] = useState(false)
-  const [unusedCredits] = useState(13) // Mock unused credits
+  const [isRefunding, setIsRefunding] = useState(false);
+  const [unusedCredits] = useState(1);
+  const { signer } = useWallet();
 
   const handleRefund = async () => {
-    setIsRefunding(true)
-    
+    setIsRefunding(true);
+
     try {
-      // Mock implementation - in real app, this would call the smart contract
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert(`Successfully refunded ${unusedCredits} unused credits!`)
+      if (!signer) throw new Error("Connect wallet");
+      const c = new ethers.Contract(
+        CONFIG.base.pay2alpha,
+        Pay2AlphaAbi as any,
+        signer
+      );
+      const tx = await c.refundCredits(0, 1);
+      await tx.wait();
+      alert("Refunded 1 credit");
     } catch (error) {
-      console.error('Failed to refund:', error)
-      alert('Failed to refund credits. Please try again.')
+      console.error("Failed to refund:", error);
+      alert("Failed to refund credits. Please try again.");
     } finally {
-      setIsRefunding(false)
+      setIsRefunding(false);
     }
-  }
+  };
 
   if (unusedCredits === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -42,7 +53,7 @@ const RefundButton: React.FC = () => {
         </>
       )}
     </button>
-  )
-}
+  );
+};
 
-export default RefundButton
+export default RefundButton;

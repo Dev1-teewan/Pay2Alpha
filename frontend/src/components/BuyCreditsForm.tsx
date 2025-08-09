@@ -1,37 +1,48 @@
-import React, { useState } from 'react'
-import { X, DollarSign, CreditCard, Zap } from 'lucide-react'
-import ApproveUSDCButton from './ApproveUSDCButton'
+import React, { useState } from "react";
+import { X, DollarSign, CreditCard, Zap } from "lucide-react";
+import { ethers } from "ethers";
+import ApproveUSDCButton from "./ApproveUSDCButton";
+import { useWallet } from "../contexts/WalletContext";
+import { CONFIG } from "../config";
+import Pay2AlphaAbi from "../abis/Pay2Alpha.json";
 
 interface Expert {
-  id: string
-  name: string
-  pricePerMessage: number
+  id: string;
+  name: string;
+  pricePerMessage: number;
 }
 
 interface BuyCreditsFormProps {
-  expert: Expert | null
-  onClose: () => void
+  expert: Expert | null;
+  onClose: () => void;
 }
 
 const BuyCreditsForm: React.FC<BuyCreditsFormProps> = ({ expert, onClose }) => {
-  const [credits, setCredits] = useState(1)
-  const [isApproved, setIsApproved] = useState(false)
+  const [credits, setCredits] = useState(1);
+  const [isApproved, setIsApproved] = useState(false);
+  const { signer } = useWallet();
 
-  const totalCost = expert ? credits * expert.pricePerMessage : 0
+  const totalCost = expert ? credits * expert.pricePerMessage : 0;
 
   const handleBuyCredits = async () => {
-    if (!expert || !isApproved) return
-    
+    if (!expert || !isApproved) return;
     try {
-      // Mock implementation - in real app, this would call the smart contract
-      console.log(`Buying ${credits} credits for expert ${expert.id}`)
-      alert(`Successfully purchased ${credits} credits for ${expert.name}!`)
-      onClose()
+      if (!signer) throw new Error("Connect wallet");
+      const c = new ethers.Contract(
+        CONFIG.base.pay2alpha,
+        (Pay2AlphaAbi as any).abi || (Pay2AlphaAbi as any),
+        signer
+      );
+      const expertAddr = expert.id;
+      const tx = await c.buyCredits(expertAddr, BigInt(credits));
+      await tx.wait();
+      alert(`Purchased ${credits} credits for ${expert.name}`);
+      onClose();
     } catch (error) {
-      console.error('Failed to buy credits:', error)
-      alert('Failed to buy credits. Please try again.')
+      console.error("Failed to buy credits:", error);
+      alert("Failed to buy credits. Please try again.");
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -55,7 +66,9 @@ const BuyCreditsForm: React.FC<BuyCreditsFormProps> = ({ expert, onClose }) => {
           <div className="mb-6">
             <div className="glass p-4 rounded-lg mb-4 web3-glow">
               <h3 className="text-white font-medium mb-1">{expert.name}</h3>
-              <p className="text-blue-200/70 text-sm">{expert.pricePerMessage} USDC per message unlock</p>
+              <p className="text-blue-200/70 text-sm">
+                {expert.pricePerMessage} USDC per message unlock
+              </p>
             </div>
 
             <div className="mb-4">
@@ -67,7 +80,9 @@ const BuyCreditsForm: React.FC<BuyCreditsFormProps> = ({ expert, onClose }) => {
                 min="1"
                 max="100"
                 value={credits}
-                onChange={(e) => setCredits(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) =>
+                  setCredits(Math.max(1, parseInt(e.target.value) || 1))
+                }
                 className="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-blue-200/50"
               />
               <p className="text-blue-200/60 text-xs mt-1">
@@ -93,25 +108,27 @@ const BuyCreditsForm: React.FC<BuyCreditsFormProps> = ({ expert, onClose }) => {
                 amount={totalCost}
                 onApproved={() => setIsApproved(true)}
               />
-              
+
               <button
                 onClick={handleBuyCredits}
                 disabled={!isApproved}
                 className={`w-full px-4 py-3 rounded-lg flex items-center justify-center space-x-2 font-medium transition-all ${
                   isApproved
-                    ? 'glass-button text-white web3-glow'
-                    : 'glass-dark text-blue-200/50 cursor-not-allowed'
+                    ? "glass-button text-white web3-glow"
+                    : "glass-dark text-blue-200/50 cursor-not-allowed"
                 }`}
               >
                 <CreditCard className="h-5 w-5" />
-                <span>Buy {credits} Credit{credits > 1 ? 's' : ''}</span>
+                <span>
+                  Buy {credits} Credit{credits > 1 ? "s" : ""}
+                </span>
               </button>
             </div>
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BuyCreditsForm
+export default BuyCreditsForm;

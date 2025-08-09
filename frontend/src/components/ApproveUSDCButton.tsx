@@ -1,30 +1,43 @@
-import React, { useState } from 'react'
-import { CheckCircle, Clock } from 'lucide-react'
+import React, { useState } from "react";
+import { CheckCircle, Clock } from "lucide-react";
+import { ethers } from "ethers";
+import { useWallet } from "../contexts/WalletContext";
+import { CONFIG } from "../config";
 
 interface ApproveUSDCButtonProps {
-  amount: number
-  onApproved: () => void
+  amount: number;
+  onApproved: () => void;
 }
 
-const ApproveUSDCButton: React.FC<ApproveUSDCButtonProps> = ({ amount, onApproved }) => {
-  const [isApproving, setIsApproving] = useState(false)
-  const [isApproved, setIsApproved] = useState(false)
+const ApproveUSDCButton: React.FC<ApproveUSDCButtonProps> = ({
+  amount,
+  onApproved,
+}) => {
+  const [isApproving, setIsApproving] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const { signer } = useWallet();
 
   const handleApprove = async () => {
-    setIsApproving(true)
-    
+    setIsApproving(true);
+
     try {
-      // Mock implementation - in real app, this would call USDC approve function
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setIsApproved(true)
-      onApproved()
+      if (!signer) throw new Error("Connect wallet");
+      const erc20Abi = [
+        "function approve(address spender,uint256 amount) returns (bool)",
+      ];
+      const token = new ethers.Contract(CONFIG.base.usdc, erc20Abi, signer);
+      const amt = ethers.parseUnits(String(amount), 6);
+      const tx = await token.approve(CONFIG.base.pay2alpha, amt);
+      await tx.wait();
+      setIsApproved(true);
+      onApproved();
     } catch (error) {
-      console.error('Failed to approve USDC:', error)
-      alert('Failed to approve USDC. Please try again.')
+      console.error("Failed to approve USDC:", error);
+      alert("Failed to approve USDC. Please try again.");
     } finally {
-      setIsApproving(false)
+      setIsApproving(false);
     }
-  }
+  };
 
   if (isApproved) {
     return (
@@ -35,7 +48,7 @@ const ApproveUSDCButton: React.FC<ApproveUSDCButtonProps> = ({ amount, onApprove
         <CheckCircle className="h-5 w-5 text-green-400" />
         <span>USDC Approved</span>
       </button>
-    )
+    );
   }
 
   return (
@@ -53,7 +66,7 @@ const ApproveUSDCButton: React.FC<ApproveUSDCButtonProps> = ({ amount, onApprove
         <span>Approve {amount} USDC</span>
       )}
     </button>
-  )
-}
+  );
+};
 
-export default ApproveUSDCButton
+export default ApproveUSDCButton;
