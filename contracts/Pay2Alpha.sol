@@ -25,6 +25,7 @@ contract Pay2Alpha is Ownable {
     uint256 public recordCount;
 
     mapping(address => Expert) public experts;
+    address[] private expertAddresses;
 
     event ExpertRegistered(address expert, string name, uint256 pricePerCredit);
     event CreditsPurchased(address client, address expert, uint256 credits, uint256 amount);
@@ -38,12 +39,38 @@ contract Pay2Alpha is Ownable {
     function registerExpert(string calldata _name, uint256 _pricePerCredit) external {
         require(bytes(experts[msg.sender].name).length == 0, "Already registered");
         experts[msg.sender] = Expert(_name, _pricePerCredit);
+        expertAddresses.push(msg.sender);
         emit ExpertRegistered(msg.sender, _name, _pricePerCredit);
     }
 
     function setPrice(uint256 _pricePerCredit) external {
         require(bytes(experts[msg.sender].name).length > 0, "Not registered");
         experts[msg.sender].pricePerCredit = _pricePerCredit;
+    }
+
+    function expertsCount() external view returns (uint256) {
+        return expertAddresses.length;
+    }
+
+    function getExperts(uint256 offset, uint256 limit)
+        external
+        view
+        returns (address[] memory addrs, Expert[] memory exps)
+    {
+        uint256 n = expertAddresses.length;
+        if (offset >= n) {
+            return (new address[](0), new Expert[](0));
+        }
+        uint256 end = offset + limit;
+        if (end > n) end = n;
+        uint256 len = end - offset;
+        addrs = new address[](len);
+        exps = new Expert[](len);
+        for (uint256 i = 0; i < len; i++) {
+            address a = expertAddresses[offset + i];
+            addrs[i] = a;
+            exps[i] = experts[a];
+        }
     }
 
     function buyCredits(address _expert, uint256 _credits) external {

@@ -36,7 +36,9 @@ contract SapphireChatRecords is SiweAuth {
         address _client,
         string calldata _ipfsCid,
         bytes calldata _secretKey
-    ) external onlyRofl returns (uint256) {
+    ) external returns (uint256) {
+        // Allow the artist/expert themselves to create a record
+        require(msg.sender == _expert, "only expert");
         records[recordCount] = Record({
             expert: _expert,
             client: _client,
@@ -46,6 +48,11 @@ contract SapphireChatRecords is SiweAuth {
         });
         recordCount++;
         return recordCount - 1;
+    }
+
+    function setRecordClient(uint256 _id, address _client) external onlyRofl {
+        require(_id < recordCount, "unknown record");
+        records[_id].client = _client;
     }
 
     function getSecretKey(uint256 _id, bytes memory token) external view returns (bytes memory) {
