@@ -26,6 +26,7 @@
     "@oasisprotocol/sapphire-contracts": "^0.2.14",
     "@oasisprotocol/sapphire-hardhat": "^2.22.2",
     "@oasisprotocol/sapphire-paratime": "^2.2.0",
+    "canonicalize": "^2.1.0",
     "hardhat": "^2.26.2"
   },
   "dependencies": {

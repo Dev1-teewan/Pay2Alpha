@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@oasisprotocol/sapphire-hardhat";
+import "./tasks/pay2alpha";
 require("dotenv").config();
 
 const { PRIVATE_KEY, BASE_SEPOLIA_RPC_URL, SAPPHIRE_RPC } = process.env;

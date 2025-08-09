@@ -1,0 +1,99 @@
+[
+  {
+    "inputs": [
+      { "internalType": "string", "name": "domain", "type": "string" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  { "inputs": [], "name": "A13e_RevokedAuthToken", "type": "error" },
+  { "inputs": [], "name": "SiweAuth_AddressMismatch", "type": "error" },
+  { "inputs": [], "name": "SiweAuth_ChainIdMismatch", "type": "error" },
+  { "inputs": [], "name": "SiweAuth_DomainMismatch", "type": "error" },
+  { "inputs": [], "name": "SiweAuth_Expired", "type": "error" },
+  { "inputs": [], "name": "SiweAuth_NotBeforeInFuture", "type": "error" },
+  { "inputs": [], "name": "SiweParser_InvalidAddressLength", "type": "error" },
+  { "inputs": [], "name": "SiweParser_InvalidNonce", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_expert", "type": "address" },
+      { "internalType": "address", "name": "_client", "type": "address" },
+      { "internalType": "string", "name": "_ipfsCid", "type": "string" },
+      { "internalType": "bytes", "name": "_secretKey", "type": "bytes" }
+    ],
+    "name": "createRecord",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "domain",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_id", "type": "uint256" },
+      { "internalType": "bytes", "name": "token", "type": "bytes" }
+    ],
+    "name": "getSecretKey",
+    "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "siweMsg", "type": "string" },
+      {
+        "components": [
+          { "internalType": "bytes32", "name": "r", "type": "bytes32" },
+          { "internalType": "bytes32", "name": "s", "type": "bytes32" },
+          { "internalType": "uint256", "name": "v", "type": "uint256" }
+        ],
+        "internalType": "struct SignatureRSV",
+        "name": "sig",
+        "type": "tuple"
+      }
+    ],
+    "name": "login",
+    "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "recordCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "records",
+    "outputs": [
+      { "internalType": "address", "name": "expert", "type": "address" },
+      { "internalType": "address", "name": "client", "type": "address" },
+      { "internalType": "string", "name": "ipfsCid", "type": "string" },
+      { "internalType": "bytes", "name": "secretKey", "type": "bytes" },
+      { "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "roflApp",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "_r", "type": "address" }],
+    "name": "setRoflApp",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

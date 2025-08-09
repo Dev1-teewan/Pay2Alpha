@@ -52,6 +52,10 @@ contract SapphireChatRecords is SiweAuth {
         require(_id < recordCount, "unknown record");
         Record storage r = records[_id];
 
+        if (msg.sender == roflApp) {
+            return r.secretKey;
+        }
+
         if (msg.sender == r.expert || msg.sender == r.client) {
             return r.secretKey;
         }
