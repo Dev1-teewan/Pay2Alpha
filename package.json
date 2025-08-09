@@ -1,0 +1,25 @@
+{
+  "name": "pay2alpha",
+  "version": "1.0.0",
+  "description": "A Web3 platform where users can pay verified experts, traders, and educators micro-stablecoin payments for private, secure, real-time insights — powered by Ethereum L2s for cost-efficiency, Oasis Sapphire for confidentiality, and The Graph for transparent impact analytics.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dev1-teewan/Pay2Alpha.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Dev1-teewan/Pay2Alpha/issues"
+  },
+  "homepage": "https://github.com/Dev1-teewan/Pay2Alpha#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "hardhat": "^2.26.2"
+  }
+}
