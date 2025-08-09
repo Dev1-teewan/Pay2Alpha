@@ -115,4 +115,12 @@ contract Pay2Alpha is Ownable {
         rec.creditsUsed += _creditsToRefund;
         emit CreditsRefunded(msg.sender, _recordId, _creditsToRefund);
     }
+
+    // Allow the buyer to spend credits when revealing content
+    function spendCredits(uint256 _recordId, uint256 _creditsToSpend) external {
+        AlphaRecord storage rec = records[_recordId];
+        require(msg.sender == rec.client, "Not your purchase");
+        require(rec.creditsUsed + _creditsToSpend <= rec.credits, "Too many credits");
+        rec.creditsUsed += _creditsToSpend;
+    }
 }

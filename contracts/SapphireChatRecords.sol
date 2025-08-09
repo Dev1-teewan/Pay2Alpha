@@ -50,8 +50,12 @@ contract SapphireChatRecords is SiweAuth {
         return recordCount - 1;
     }
 
-    function setRecordClient(uint256 _id, address _client) external onlyRofl {
+    function setRecordClient(uint256 _id, address _client) external {
         require(_id < recordCount, "unknown record");
+        require(
+            msg.sender == roflApp || msg.sender == records[_id].expert,
+            "only app or expert"
+        );
         records[_id].client = _client;
     }
 
