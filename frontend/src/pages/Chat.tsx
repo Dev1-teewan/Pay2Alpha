@@ -229,6 +229,7 @@ const Chat: React.FC = () => {
 
       // 2) Switch to Sapphire + SIWE + getSecretKey
       await ensureChain(CONFIG.sapphire.chainHex);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const wrapped = sapphire.wrapEthersProvider((window as any).ethereum);
       const sapphireProvider = new ethers.BrowserProvider(wrapped);
       const sapphireSigner = await sapphireProvider.getSigner();
