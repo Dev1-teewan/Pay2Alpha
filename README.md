@@ -18,7 +18,7 @@ Private, paid expert insights — credits and payouts on Base; encrypted message
 
 - Sapphire Testnet (privacy)
   - `SapphireChatRecords`: `0xC5Dd06a0345087ceb10AB852441ecc22F0Fc9e0D`
-  - Explorer: [`oasis explorer`](https://explorer.oasis.io/testnet/sapphire)
+  - Explorer: [`oasis explorer`](https://explorer.oasis.io/testnet/sapphire/search?q=0xC5Dd06a0345087ceb10AB852441ecc22F0Fc9e0D)
 
 Shortcuts:
 
